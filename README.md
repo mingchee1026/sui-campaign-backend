@@ -1,8 +1,5 @@
 # Referal Compaign Backend
 
-
-
-
 ### Step
 
 #### Step 1: Initial Setup
@@ -18,6 +15,6 @@
 
 #### Step 3: Running the Project
 
-- Development Mode: `npm run dev`
-- Building: `npm run build`
-- Production Mode: Set `.env` to `NODE_ENV="production"` then `npm run build && npm run start`
+- Development Mode: `pnpm run dev`
+- Building: `pnpm run build`
+- Production Mode: Set `.env` to `NODE_ENV="production"` then `pnpm run build && pnpm run start`
