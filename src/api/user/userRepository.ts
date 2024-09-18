@@ -1,30 +1,38 @@
-import type { User } from "@/api/user/userModel";
-
-export const users: User[] = [
-  {
-    id: 1,
-    name: "Alice",
-    email: "alice@example.com",
-    age: 42,
-    createdAt: new Date(),
-    updatedAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days later
-  },
-  {
-    id: 2,
-    name: "Robert",
-    email: "Robert@example.com",
-    age: 21,
-    createdAt: new Date(),
-    updatedAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days later
-  },
-];
-
+import { User } from "@/api/user/userModel";
+import { unknown } from "zod";
+import type { Jwt, UserResponse } from "./userInterface";
 export class UserRepository {
-  async findAllAsync(): Promise<User[]> {
-    return users;
+  async create(newUser: UserResponse) {
+    const user = new User(newUser);
+    const result = await user.save();
+    return user;
   }
 
-  async findByIdAsync(id: number): Promise<User | null> {
-    return users.find((user) => user.id === id) || null;
+  async updateJwt(
+    campaign_id: string,
+    subject: string,
+    jwt: Jwt,
+    attribution_code: string,
+  ): Promise<UserResponse | null> {
+    const user = await User.findOne({ campaign_id, subject });
+    if (user) {
+      user.jwt = jwt;
+      user.referred_by = attribution_code;
+
+      return await user.save();
+    }
+    return null;
+  }
+
+  async findAll() {
+    return User.find();
+  }
+
+  async findAllByCode(attribution_code: string) {
+    return await User.find({ referred_by: attribution_code });
+  }
+
+  async findBySubject(campaign_id: string, subject: string): Promise<UserResponse | null> {
+    return await User.findOne({ campaign_id, subject });
   }
 }

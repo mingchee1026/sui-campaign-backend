@@ -3,12 +3,12 @@ import mongoose from "mongoose";
 const SaltSchema = new mongoose.Schema({
   subject: {
     type: String,
-    requireed: true,
+    require: true,
     index: true,
   },
   salt: {
     type: String,
-    requireed: true,
+    require: true,
     index: true,
   },
   createdAt: {
