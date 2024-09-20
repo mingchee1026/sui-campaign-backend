@@ -38,6 +38,9 @@ importers:
       mongoose:
         specifier: ^8.6.2
         version: 8.6.2
+      pino:
+        specifier: ^9.4.0
+        version: 9.4.0
       pino-http:
         specifier: ^10.0.0
         version: 10.3.0
