@@ -12,12 +12,12 @@ export class UserRepository {
     campaign_id: string,
     subject: string,
     jwt: Jwt,
-    attribution_code: string,
+    // referred_by: string
   ): Promise<UserResponse | null> {
     const user = await User.findOne({ campaign_id, subject });
     if (user) {
       user.jwt = jwt;
-      user.referred_by = attribution_code;
+      // user.referred_by = referred_by;
 
       return await user.save();
     }
@@ -34,5 +34,9 @@ export class UserRepository {
 
   async findBySubject(campaign_id: string, subject: string): Promise<UserResponse | null> {
     return await User.findOne({ campaign_id, subject });
+  }
+
+  async findByAttributionCode(campaign_id: string, attribution_code: string): Promise<UserResponse | null> {
+    return await User.findOne({ campaign_id, attribution_code });
   }
 }

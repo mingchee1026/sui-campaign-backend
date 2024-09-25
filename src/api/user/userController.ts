@@ -7,13 +7,15 @@ import { Ed25519Keypair, Ed25519PublicKey } from "@mysten/sui/keypairs/ed25519";
 
 class UserController {
   public register: RequestHandler = async (req: Request, res: Response) => {
-    const { campaign_id, wallet_address, salt, jwt, attribution_code } = req.body;
+    const { campaign_id, wallet_address, wallet_keypair, salt, jwt, referred_by } = req.body;
+
     const serviceResponse = await userService.register({
       campaign_id,
       wallet_address,
+      wallet_keypair,
       salt,
       jwt,
-      attribution_code,
+      referred_by,
     });
 
     return handleServiceResponse(serviceResponse, res);

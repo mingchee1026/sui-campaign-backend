@@ -18,9 +18,10 @@ export interface Jwt {
 export interface RegisterUserRequest {
   campaign_id: string;
   wallet_address: string;
+  wallet_keypair: string;
   salt: string;
   jwt: Jwt;
-  attribution_code: string;
+  referred_by: string;
 }
 
 export interface UserResponse {
