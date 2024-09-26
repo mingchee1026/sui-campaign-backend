@@ -3,8 +3,6 @@ import type { Request, RequestHandler, Response } from "express";
 import { userService } from "@/api/user/userService";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 
-import { Ed25519Keypair, Ed25519PublicKey } from "@mysten/sui/keypairs/ed25519";
-
 class UserController {
   public register: RequestHandler = async (req: Request, res: Response) => {
     const { campaign_id, wallet_address, wallet_keypair, salt, jwt, referred_by } = req.body;
@@ -32,6 +30,18 @@ class UserController {
   public getReferrals: RequestHandler = async (req: Request, res: Response) => {
     const attribution_code = req.params.attribution_code as string;
     const serviceResponse = await userService.findAllReferrals(attribution_code);
+
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public createSponsors: RequestHandler = async (req: Request, res: Response) => {
+    const serviceResponse = await userService.createSponsorWallets();
+
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public getSponsors: RequestHandler = async (req: Request, res: Response) => {
+    const serviceResponse = await userService.getSponsorWallets();
 
     return handleServiceResponse(serviceResponse, res);
   };

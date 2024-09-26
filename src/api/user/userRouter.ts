@@ -32,3 +32,6 @@ export const userRouter: Router = express.Router();
 userRouter.get("/profile/:campaign_id/:subject", userController.getUser);
 userRouter.get("/referred/:attribution_code", userController.getReferrals);
 userRouter.post("/register", userController.register);
+
+userRouter.get("/sponsors", userController.getSponsors);
+userRouter.get("/sponsors/create", userController.createSponsors);

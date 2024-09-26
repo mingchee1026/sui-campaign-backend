@@ -37,3 +37,11 @@ export interface UserResponse {
   avatar: string;
   jwt: Jwt;
 }
+
+export interface ISponsorWallet {
+  campaign_id: string;
+  subject: string;
+  address: string;
+  secretKey: string;
+  publicKey: string;
+}

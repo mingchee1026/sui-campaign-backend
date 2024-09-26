@@ -1,15 +1,15 @@
-import { CustodialAddress } from "@/api/user/custodialAddressModel";
-import type { User } from "@/api/user/userModel";
 import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import { getKeypair } from "@/common/utils/transactions/getKeyPair";
 import { sponsorAndSignTransaction } from "@/common/utils/transactions/sponsorAndSignTransaction";
 import { logger } from "@/server";
 import { SuiClient } from "@mysten/sui/client";
+import { getFaucetHost, requestSuiFromFaucetV0 } from "@mysten/sui/faucet";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { Transaction } from "@mysten/sui/transactions";
 import { StatusCodes } from "http-status-codes";
-import type { RegisterUserRequest, UserResponse } from "./userInterface";
+import { CustodialWallet } from "./custodialwalletModel";
+
+import type { ISponsorWallet, RegisterUserRequest, UserResponse } from "./userInterface";
 
 export class UserService {
   private userRepository: UserRepository;
@@ -26,18 +26,17 @@ export class UserService {
       const referred_by = requestObj.referred_by;
       let referrerAddress = "";
 
-      let user = await this.userRepository.findBySubject(campaign_id, subject);
-      console.log({ user });
-      if (!user) {
-        const custodial_address = await generateCustodialAddress(campaign_id, subject);
+      const sponsorWallet = await this.getCustodialWallet(campaign_id, subject);
 
+      let user = await this.userRepository.findBySubject(campaign_id, subject);
+      if (!user) {
         user = {
           campaign_id: requestObj.campaign_id,
           subject: requestObj.jwt.sub,
           email: requestObj.jwt.email,
           salt: requestObj.salt,
           wallet_address: requestObj.wallet_address,
-          custodial_address,
+          custodial_address: sponsorWallet.address,
           attribution_code: generateUniqueCode(),
           referred_by: referred_by,
           user_name: requestObj.jwt.name,
@@ -49,15 +48,15 @@ export class UserService {
 
         const referrerUser = await this.userRepository.findByAttributionCode(campaign_id, referred_by);
 
-        console.log({ referred_by, referrerUser });
-
         referrerAddress = referrerUser?.wallet_address || "";
       } else {
         const jwt = requestObj.jwt;
         const referred_by = requestObj.referred_by;
+        const custodial_address = sponsorWallet.address;
         await this.userRepository.updateJwt(
           campaign_id,
           subject,
+          custodial_address,
           jwt,
           // referred_by
         );
@@ -66,7 +65,7 @@ export class UserService {
 
       const { sponsoredSignedTxn } = await executeActivityTransaction(
         requestObj.wallet_address,
-        requestObj.wallet_keypair,
+        sponsorWallet.secretKey,
         referrerAddress,
       );
 
@@ -101,11 +100,6 @@ export class UserService {
     try {
       let users = await this.userRepository.findAllByCode(attribution_code);
       if (!users || users.length === 0) {
-        // return ServiceResponse.failure(
-        //   "No Users found",
-        //   null,
-        //   StatusCodes.NOT_FOUND
-        // );
         users = [];
       }
       return ServiceResponse.success<UserResponse[]>("Users found", users);
@@ -168,35 +162,81 @@ export class UserService {
 
   // Retrieves a single user by their ID
   */
+
+  // Create sponsors wallets and save to the database
+  async createSponsorWallets(): Promise<ServiceResponse> {
+    const sponsorWalletCount = Number.parseInt(process.env.SPONSOR_WALLET_COUNT || "50");
+    for (let idx = 0; idx <= sponsorWalletCount; idx++) {
+      try {
+        const keypair = new Ed25519Keypair();
+        const secretKey = keypair.getSecretKey();
+        const publicKey = keypair.getPublicKey();
+        const address = publicKey.toSuiAddress();
+
+        const custodialWallet = new CustodialWallet({
+          campaign_id: "",
+          subject: "",
+          address,
+          secretKey,
+          publicKey,
+        });
+
+        const result = await custodialWallet.save();
+        await this.handleRequestSui(address);
+      } catch (error) {
+        console.log(`createSponsorWallets error: index=${idx} => ${error}`);
+      }
+    }
+
+    return ServiceResponse.success("Sponsors wallets created.", null);
+  }
+
+  async getSponsorWallets(): Promise<ServiceResponse<ISponsorWallet[] | null>> {
+    const custodialWallets = await CustodialWallet.find();
+
+    return ServiceResponse.success("Sponsors wallets created.", custodialWallets);
+  }
+
+  async getCustodialWallet(campaign_id: string, subject: string): Promise<ISponsorWallet> {
+    let custodialWallet = await CustodialWallet.findOne({
+      campaign_id,
+      subject,
+    });
+
+    if (!custodialWallet) {
+      custodialWallet = await CustodialWallet.findOne({
+        campaign_id: "",
+        subject: "",
+      });
+
+      if (custodialWallet) {
+        custodialWallet.campaign_id = campaign_id;
+        custodialWallet.subject = subject;
+
+        await custodialWallet.save();
+      }
+    }
+
+    return custodialWallet;
+  }
+
+  async handleRequestSui(address: string) {
+    await requestSuiFromFaucetV0({
+      // connect to Devnet
+      host: getFaucetHost("testnet"),
+      recipient: address,
+    });
+  }
 }
 
 const generateUniqueCode = () => {
   return Math.random().toString(36).substring(2, 7); //.toUpperCase();
 };
 
-const generateCustodialAddress = async (campaign_id: string, subject: string): Promise<string> => {
-  const keypair = new Ed25519Keypair();
-  const secretKey = keypair.getSecretKey();
-  const publicKey = keypair.getPublicKey();
-  const address = publicKey.toSuiAddress();
-
-  const custodialAddress = new CustodialAddress({
-    campaign_id,
-    subject,
-    address,
-    secretKey,
-    publicKey,
-  });
-
-  const result = await custodialAddress.save();
-
-  return address;
-};
-
 // Sponsor Transaction
 const executeActivityTransaction = async (
   ephemeralAddress: string,
-  ephemeralKeyPairB64: string,
+  sponsorSecretKey: string,
   referrerAddress: string,
 ) => {
   const suiClient = new SuiClient({
@@ -213,13 +253,13 @@ const executeActivityTransaction = async (
   });
 
   if (referrerAddress) {
-    console.log({ referrerAddress });
     try {
       tx.moveCall({
         target: `${process.env.PACKAGE_ADDRESS}::campaign::create_referral`,
         arguments: [
           tx.object(`${process.env.CAMPAIGN_OBJECT_ADDRESS}`), // campaign object address
-          tx.pure.string(referrerAddress), // referrer address
+          tx.pure.address(referrerAddress), // referrer address
+          tx.object("0x6"), // Clock object address
         ],
       });
     } catch (error) {
@@ -231,7 +271,7 @@ const executeActivityTransaction = async (
     tx,
     suiClient,
     ephemeralAddress,
-    ephemeralKeyPairB64,
+    sponsorSecretKey,
   });
 
   return { sponsoredSignedTxn };

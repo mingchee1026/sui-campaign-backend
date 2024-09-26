@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const CustodialAddressSchema = new mongoose.Schema({
+const CustodialWalletSchema = new mongoose.Schema({
   campaign_id: {
     type: String,
     require: true,
@@ -30,5 +30,5 @@ const CustodialAddressSchema = new mongoose.Schema({
   },
 });
 
-// Create the Custodial Address model
-export const CustodialAddress = mongoose.model("custodialAddress", CustodialAddressSchema);
+// Create the Custodial Wallet model
+export const CustodialWallet = mongoose.model("custodialWallets", CustodialWalletSchema);

@@ -11,11 +11,13 @@ export class UserRepository {
   async updateJwt(
     campaign_id: string,
     subject: string,
+    custodial_address: string,
     jwt: Jwt,
     // referred_by: string
   ): Promise<UserResponse | null> {
     const user = await User.findOne({ campaign_id, subject });
     if (user) {
+      user.custodial_address = custodial_address;
       user.jwt = jwt;
       // user.referred_by = referred_by;
 
