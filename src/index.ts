@@ -1,8 +1,10 @@
-import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
+import { SuiClient, SuiHTTPTransport, getFullnodeUrl } from "@mysten/sui/client";
 import mongoose from "mongoose";
 
 import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
+
+Object.assign(global, { WebSocket: require("ws") });
 
 let server: any;
 mongoose.connect(env.MONGODB_URL).then(() => {
@@ -21,7 +23,18 @@ mongoose.connect(env.MONGODB_URL).then(() => {
 const onEventListner = async () => {
   // Package is on Testnet.
   const suiClient = new SuiClient({
-    url: getFullnodeUrl("testnet"),
+    // url: getFullnodeUrl("mainnet"),
+    // transport: new SuiHTTPTransport({
+    //   url: "https://fullnode.testnet.sui.io:443",
+    //   websocket: {
+    //     reconnectTimeout: 1000,
+    //     url: "wss://rpc.testnet.sui.io:443",
+    //   },
+    // }),
+    transport: new SuiHTTPTransport({
+      url: getFullnodeUrl("testnet"),
+      WebSocketConstructor: WebSocket,
+    }),
   });
 
   const packageId = process.env.PACKAGE_ADDRESS;
