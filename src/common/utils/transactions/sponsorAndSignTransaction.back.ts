@@ -1,92 +1,102 @@
 import type { SuiClient } from "@mysten/sui/client";
-import {
-  decodeSuiPrivateKey,
-  encodeSuiPrivateKey,
-} from "@mysten/sui/cryptography";
+import { decodeSuiPrivateKey, encodeSuiPrivateKey } from "@mysten/sui/cryptography";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { Transaction } from "@mysten/sui/transactions";
-import { fromB64, fromHEX, toB64 } from "@mysten/sui/utils";
-import { enokiClient } from "./getEnokiClient";
+import { fromB64, fromHEX } from "@mysten/sui/utils";
 import { getKeypair } from "./getKeyPair";
-import { EnokiNetwork } from "@mysten/enoki/dist/cjs/EnokiClient/type";
-import { Logger } from "pino";
-import { logger } from "@/server";
 
 interface SponsorAndSignTransactionProps {
   suiClient: SuiClient;
   tx: Transaction;
-  senderSecretKey: string;
+  ephemeralAddress: string;
+  sponsorSecretKey: string;
 }
 
 export const sponsorAndSignTransaction = async ({
   tx,
   suiClient,
-  senderSecretKey,
+  ephemeralAddress,
+  sponsorSecretKey,
 }: SponsorAndSignTransactionProps) => {
   try {
-    // logger.info(`custodialSecretKey: ${custodialSecretKey}`);
+    console.log({ sponsorSecretKey });
+    const { schema, secretKey } = decodeSuiPrivateKey(sponsorSecretKey);
+    const sponsorKeypair = Ed25519Keypair.fromSecretKey(secretKey);
+    // const sponsorKeypair = getKeypair(sponsorSecretKey);
+    // const sponsorKeypair = getKeypair(process.env.SPONSOR_SECRET_KEY!);
+    const sponserAddress = sponsorKeypair.getPublicKey().toSuiAddress();
+    console.log({ sponserAddress });
 
-    const { schema, secretKey } = decodeSuiPrivateKey(senderSecretKey);
-    const senderKeypair = Ed25519Keypair.fromSecretKey(secretKey);
-    const senderAddress = senderKeypair.getPublicKey().toSuiAddress();
-
-    logger.info(`senderAddress: ${senderAddress}`);
-
-    const txBytes = await tx.build({
+    const kindBytes = await tx.build({
       client: suiClient,
       onlyTransactionKind: true,
     });
+    console.log({ kindBytes });
 
-    // console.log({ txBytes });
+    // construct a sponsored transaction from the kind bytes
+    const sponsoredtx = Transaction.fromKind(kindBytes);
+    console.log({ sponsoredtx });
 
-    const network = process.env.ENOKI_CLIENT_NETWORK;
+    let sponsorCoins: { objectId: string; version: string; digest: string }[] = [];
 
-    logger.info(`network: ${network}`);
-
-    const resp = await enokiClient.createSponsoredTransaction({
-      network: network as EnokiNetwork,
-      transactionKindBytes: toB64(txBytes),
-      sender: senderAddress,
-      allowedMoveCallTargets: [
-        `${process.env.PACKAGE_ADDRESS}::campaign::add_whitelist`,
-        `${process.env.PACKAGE_ADDRESS}::campaign::log_user_activity`,
-        `${process.env.PACKAGE_ADDRESS}::campaign::create_referral`,
-      ],
-      allowedAddresses: [senderAddress],
+    const coins = await suiClient.getCoins({
+      owner: sponserAddress,
+      limit: 10,
     });
+    console.log({ coins: coins.data });
+    if (coins.data.length > 0) {
+      sponsorCoins = coins.data.map((coin) => ({
+        objectId: coin.coinObjectId,
+        version: coin.version,
+        digest: coin.digest,
+      }));
+    }
 
-    const { signature } = await senderKeypair.signTransaction(
-      fromB64(resp.bytes)
-    );
+    // you can now set the sponsored transaction data that is required
+    sponsoredtx.setSender(ephemeralAddress);
+    sponsoredtx.setGasOwner(sponserAddress);
+    sponsoredtx.setGasBudget(10000000);
+    sponsoredtx.setGasPayment(sponsorCoins);
 
-    // console.log({ signature });
+    const sponsoredTxnBuild = await sponsoredtx.build({ client: suiClient });
+    const sponsoredSignedTxn = await sponsorKeypair.signTransaction(sponsoredTxnBuild);
 
-    const { digest } = await enokiClient.executeSponsoredTransaction({
-      digest: resp.digest,
-      signature,
-    });
+    // const ephemeralKeyPair = Ed25519Keypair.fromSecretKey(
+    //   fromB64(ephemeralKeyPairB64)
+    // );
+    // console.log({
+    //   ephemeralKey: ephemeralKeyPair.getPublicKey().toSuiAddress(),
+    // });
+    // const userSignedTxn = await ephemeralKeyPair.signTransaction(
+    //   sponsoredTxnBuild
+    // );
 
-    // logger.info(`digest: ${digest}`);
-
+    // return {
+    //   sponsoredSignedTxn,
+    //   userSignedTxn,
+    // };
     return {
-      digest,
+      sponsoredSignedTxn,
+      sponsoredtx,
     };
   } catch (error) {
     console.log(error);
     return {
-      digest: null,
+      sponsoredSignedTxn: null,
+      sponsoredtx: null,
     };
   }
 };
 
-export const sponsorAndSignTransactionRaw = async ({
+export const sponsorAndSignTransaction1 = async ({
   tx,
   suiClient,
-  senderSecretKey,
+  ephemeralAddress,
+  sponsorSecretKey,
 }: SponsorAndSignTransactionProps) => {
   try {
-    console.log({ senderSecretKey });
-    const { schema, secretKey } = decodeSuiPrivateKey(senderSecretKey);
+    console.log({ sponsorSecretKey });
+    const { schema, secretKey } = decodeSuiPrivateKey(sponsorSecretKey);
     const sponsorKeypair = Ed25519Keypair.fromSecretKey(secretKey);
     const sponserAddress = sponsorKeypair.getPublicKey().toSuiAddress();
     console.log({ sponserAddress });
@@ -101,8 +111,7 @@ export const sponsorAndSignTransactionRaw = async ({
     const sponsoredtx = Transaction.fromKind(kindBytes);
     console.log({ sponsoredtx });
 
-    let sponsorCoins: { objectId: string; version: string; digest: string }[] =
-      [];
+    let sponsorCoins: { objectId: string; version: string; digest: string }[] = [];
 
     const coins = await suiClient.getCoins({
       owner: sponserAddress,
@@ -126,9 +135,7 @@ export const sponsorAndSignTransactionRaw = async ({
     sponsoredtx.setGasPayment(sponsorCoins);
 
     const sponsoredTxnBuild = await sponsoredtx.build({ client: suiClient });
-    const sponsoredSignedTxn = await sponsorKeypair.signTransaction(
-      sponsoredTxnBuild
-    );
+    const sponsoredSignedTxn = await sponsorKeypair.signTransaction(sponsoredTxnBuild);
 
     suiClient
       .executeTransactionBlock({

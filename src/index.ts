@@ -1,76 +1,80 @@
-import { SuiClient, SuiHTTPTransport, getFullnodeUrl } from "@mysten/sui/client";
+import {
+  SuiClient,
+  SuiHTTPTransport,
+  getFullnodeUrl,
+} from "@mysten/sui/client";
 import mongoose from "mongoose";
 
 import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
-
-Object.assign(global, { WebSocket: require("ws") });
-
-let server: any;
-mongoose.connect(env.MONGODB_URL).then(() => {
-  logger.info("Connected to MongoDB");
-  server = app.listen(env.PORT, () => {
-    const { NODE_ENV, HOST, PORT } = env;
-    logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
-  });
-});
+import { subscribeSuiEventService } from "@/background/subscribeSuiEventService";
+import { monitorCustodialWalletService } from "./background/monitorCustodialWalletService";
 
 // const server = app.listen(env.PORT, () => {
 //   const { NODE_ENV, HOST, PORT } = env;
 //   logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
 // });
 
-const onEventListner = async () => {
-  // Package is on Testnet.
-  const suiClient = new SuiClient({
-    // url: getFullnodeUrl("mainnet"),
-    // transport: new SuiHTTPTransport({
-    //   url: "https://fullnode.testnet.sui.io:443",
-    //   websocket: {
-    //     reconnectTimeout: 1000,
-    //     url: "wss://rpc.testnet.sui.io:443",
-    //   },
-    // }),
-    transport: new SuiHTTPTransport({
-      url: getFullnodeUrl("testnet"),
-      WebSocketConstructor: WebSocket,
-    }),
-  });
-
-  const packageId = process.env.PACKAGE_ADDRESS;
-  if (!packageId) {
-    return;
-  }
-
-  console.log(
-    await suiClient.getObject({
-      id: packageId,
-      options: { showPreviousTransaction: true },
-    }),
-  );
-
-  unsubscribe = await suiClient.subscribeEvent({
-    filter: { Package: packageId },
-    onMessage: (event) => {
-      console.log("subscribeEvent", JSON.stringify(event, null, 2));
-    },
-  });
-};
-
-let unsubscribe: (() => any) | null | undefined = null;
-onEventListner();
-
-const onCloseSignal = async () => {
-  logger.info("sigint received, shutting down");
-  if (unsubscribe) {
-    await unsubscribe();
-    unsubscribe = undefined;
-  }
-
-  server.close(() => {
-    logger.info("server closed");
+let server: any;
+mongoose
+  .connect(env.MONGODB_URL)
+  .then(() => {
+    logger.info("Connected to MongoDB.");
+    server = app.listen(env.PORT, () => {
+      const { NODE_ENV, HOST, PORT } = env;
+      logger.info(
+        `Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`
+      );
+    });
+  })
+  .catch((error: any) => {
+    logger.info("Can not Connect to MongoDB.");
     process.exit();
   });
+
+// Start custodial wallets monitoring
+monitorCustodialWalletService.onStartMonitor();
+
+// Start SUI event listener
+// subscribeSuiEventService.onSubscribeEvent();
+
+// Get IDs
+const getAdminCap = async () => {
+  const suiClient = new SuiClient({
+    url: process.env.SUI_NETWORK || "http://localhost",
+  });
+  const adminCap = await suiClient
+    .getOwnedObjects({
+      owner:
+        "0xf297beb5b35cc39932217e5b4384708fa20b42313bf80488b0c531963702c1b1",
+      filter: {
+        StructType:
+          "0xc20fe1425c98c7bc69cc64df534685d91795ea013ad88f2d680b91442aed25a7::campaign::AdminCap", //`${process.env.PACKAGE_ADDRESS}::campaign::AdminCap`,
+      },
+    })
+    .then(async (resp) => {
+      console.log(resp.data);
+      return resp.data.length === 0;
+    });
+  console.log(adminCap);
+};
+
+getAdminCap();
+
+//////////////////////
+
+const onCloseSignal = async () => {
+  logger.info("Sigint received, shutting down.");
+
+  monitorCustodialWalletService.onStopMonitor();
+
+  subscribeSuiEventService.unSubscribeEvent();
+
+  server.close(() => {
+    logger.info("Server closed.");
+    process.exit();
+  });
+
   setTimeout(() => process.exit(1), 10000).unref(); // Force shutdown after 10s
 };
 

@@ -5,6 +5,7 @@ import { GetSaltRequest, GetSaltResponse } from "./authInterface";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/server";
+import { Salt } from "./saltModel";
 
 export class AuthService {
   private authRepository: AuthRepository;
@@ -27,11 +28,13 @@ export class AuthService {
           `Salt not found in database. Fetching from Mysten API. subject = ${dataRequest.subject}`
         );
 
-        const saltFromMysten = await this.getSaltFromMystenAPI(
-          dataRequest.jwt!
-        );
+        // const saltFromMysten = await this.getSaltFromMystenAPI(
+        //   dataRequest.jwt!
+        // );
 
-        if (!saltFromMysten) {
+        // console.log({ saltFromMysten });
+
+        if (!dataRequest.salt) {
           return ServiceResponse.failure(
             "Salt not found",
             null,
@@ -42,10 +45,10 @@ export class AuthService {
         // storing new salt in DB
         await this.authRepository.saveSaltAsync(
           dataRequest.subject,
-          saltFromMysten
+          dataRequest.salt
         );
 
-        saltFromDB.salt = saltFromMysten;
+        saltFromDB.salt = dataRequest.salt;
       }
 
       return ServiceResponse.success<GetSaltResponse>("Salt found", saltFromDB);
@@ -79,6 +82,8 @@ export class AuthService {
     });
 
     const responseJson = await response.json();
+
+    console.log({ response });
 
     return responseJson.salt;
   }

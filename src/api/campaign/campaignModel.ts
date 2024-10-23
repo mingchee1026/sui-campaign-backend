@@ -1,60 +1,49 @@
 import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema({
+const CampaignSchema = new mongoose.Schema({
+  package_id: {
+    type: String,
+    require: true,
+    index: true,
+  },
+  admin_cap_id: {
+    type: String,
+    require: true,
+    index: true,
+  },
+  secret_id: {
+    type: String,
+    require: true,
+    index: true,
+  },
   campaign_id: {
     type: String,
     require: true,
     index: true,
   },
-  subject: {
+  title: {
     type: String,
     require: true,
     index: true,
   },
-  email: {
-    type: String,
-    require: true,
-    index: true,
-  },
-  salt: {
-    type: String,
-  },
-  wallet_address: {
-    type: String,
-    require: true,
-    index: true,
-  },
-  custodial_address: {
-    type: String,
-    require: true,
-    index: true,
-  },
-  attribution_code: {
-    type: String,
-    require: true,
-    index: true,
-  },
-  referred_by: {
-    type: String,
-    require: true,
-    index: true,
-  },
-  user_name: {
+  about: {
     type: String,
     require: true,
   },
-  avatar: {
-    type: String,
+  active: {
+    type: Boolean,
     require: true,
   },
-  jwt: {
-    type: {},
-  },
-  createdAt: {
+  started_at: {
     type: Date,
+    require: true,
     default: Date.now,
+  },
+  ended_at: {
+    type: Date,
+    require: true,
   },
 });
 
 // Create the User model
-export const User = mongoose.model("user", UserSchema);
+export const Campaign = mongoose.model("campaign", CampaignSchema);

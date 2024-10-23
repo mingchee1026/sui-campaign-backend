@@ -15,33 +15,25 @@ export interface Jwt {
   jti: string;
 }
 
-export interface RegisterUserRequest {
-  campaign_id: string;
-  wallet_address: string;
-  wallet_keypair: string;
-  salt: string;
-  jwt: Jwt;
-  referred_by: string;
-}
-
-export interface UserResponse {
+export interface IUser {
   campaign_id: string;
   subject: string;
   email: string;
-  salt: string;
   wallet_address: string;
   custodial_address: string;
   attribution_code: string;
   referred_by: string;
   user_name: string;
   avatar: string;
-  jwt: Jwt;
 }
 
-export interface ISponsorWallet {
+export interface UserRegisterRequest {
   campaign_id: string;
-  subject: string;
-  address: string;
-  secretKey: string;
-  publicKey: string;
+  wallet_address: string;
+  referred_by: string;
+}
+
+export interface UserRegisterResponse {
+  user: IUser;
+  digest: string | null;
 }

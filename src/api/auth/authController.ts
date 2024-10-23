@@ -11,13 +11,19 @@ class AuthController {
   public getSalt: RequestHandler = async (_req: Request, res: Response) => {
     const body = await _req.body;
     try {
-      let dataRequest: GetSaltRequest = body as GetSaltRequest;
-      if (dataRequest && dataRequest.subject && dataRequest.jwt) {
+      const { subject, salt } = body;
+      const authHeader = _req.headers["authorization"];
+      const jwt = authHeader && authHeader.split(" ")[1];
+      if (subject && jwt) {
         logger.info(
-          `Received request for FETCHING Salt for subject ${dataRequest.subject}`
+          `Received request for FETCHING Salt for subject ${subject}`
         );
 
-        const serviceResponse = await authService.getSaltBySubject(dataRequest);
+        const serviceResponse = await authService.getSaltBySubject({
+          jwt,
+          subject,
+          salt,
+        });
 
         return handleServiceResponse(serviceResponse, res);
       }
