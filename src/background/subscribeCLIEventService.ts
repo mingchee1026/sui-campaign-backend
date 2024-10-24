@@ -91,7 +91,7 @@ class SubscribeCLIEventService {
       subject: "Congratulations on your registration!",
       html: RegistrationConfirmEmailTemplate,
       headers: {
-        "List-Unsubscribe": "<https://example.com/unsubscribe>",
+        "List-Unsubscribe": "<https://unsubscribe.6degrees.co>",
       },
     });
 
