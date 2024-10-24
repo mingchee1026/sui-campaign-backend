@@ -221,7 +221,7 @@ export const RegistrationConfirmEmailTemplate = `
             </p>
 
             <p style="text-align: center">
-            <a href="https://f2m.6degrees.co" class="button">Refer more friends!</a>
+            <a href="https://free2move.6degrees.co" class="button">Refer more friends!</a>
             </p>
 
             <p>Best Regards,</p>
@@ -240,7 +240,7 @@ export const RegistrationConfirmEmailTemplate = `
             <div class="footer">
             <a href="https://www.6degrees.co"><img src="https://media-assets.6degrees.co/assets/6D-poweredby-SUI.png" alt="6Degrees Logo" style="margin: 0px 20px 20px 0px"></a>
             <p>
-                <a href="https://f2m.6degrees.co/privacy-policy/">Privacy Policy</a> | <a href="https://f2m.6degrees.co/terms-and-conditions/">terms of Use</a> |
+                <a href="https://free2move.6degrees.co/privacy-policy/">Privacy Policy</a> | <a href="https://free2move.6degrees.co/terms-and-conditions/">terms of Use</a> |
                 <a href="#">Unsubscribe</a>
             </p>
             </div>
@@ -473,7 +473,7 @@ export const ReferralConfirmEmailTemplate = (referred: number) => `
             </p>
 
             <p style="text-align: center">
-            <a href="https://f2m.6degrees.co" class="button">Access Dashboard</a>
+            <a href="https://free2move.6degrees.co" class="button">Access Dashboard</a>
             </p>
 
             <p>Best Regards,</p>
@@ -492,7 +492,7 @@ export const ReferralConfirmEmailTemplate = (referred: number) => `
             <div class="footer">
             <a href="https://www.6degrees.co"><img src="https://media-assets.6degrees.co/assets/6D-poweredby-SUI.png" alt="6Degrees Logo" style="margin: 0px 20px 20px 0px"></a>
             <p>
-                <a href="https://f2m.6degrees.co/privacy-policy/">Privacy Policy</a> | <a href="https://f2m.6degrees.co/terms-and-conditions/">terms of Use</a> |
+                <a href="https://free2move.6degrees.co/privacy-policy/">Privacy Policy</a> | <a href="https://free2move.6degrees.co/terms-and-conditions/">terms of Use</a> |
                 <a href="#">Unsubscribe</a>
             </p>
             </div>

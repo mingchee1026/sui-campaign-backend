@@ -90,6 +90,9 @@ class SubscribeCLIEventService {
       to: [recipient],
       subject: "Congratulations on your registration!",
       html: RegistrationConfirmEmailTemplate,
+      headers: {
+        "List-Unsubscribe": "<https://example.com/unsubscribe>",
+      },
     });
 
     if (error) {
@@ -103,6 +106,9 @@ class SubscribeCLIEventService {
       to: [recipient],
       subject: "Great news! One of your friends has accepted your referral.",
       html: ReferralConfirmEmailTemplate(referred),
+      headers: {
+        "List-Unsubscribe": "<https://example.com/unsubscribe>",
+      },
     });
 
     if (error) {
