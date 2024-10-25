@@ -107,7 +107,7 @@ class SubscribeCLIEventService {
       subject: "Great news! One of your friends has accepted your referral.",
       html: ReferralConfirmEmailTemplate(referred),
       headers: {
-        "List-Unsubscribe": "<https://example.com/unsubscribe>",
+        "List-Unsubscribe": "<https://unsubscribe.6degrees.co>",
       },
     });
 
