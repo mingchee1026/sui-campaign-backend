@@ -9,6 +9,7 @@ import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
 import { subscribeSuiEventService } from "@/background/subscribeSuiEventService";
 import { monitorCustodialWalletService } from "./background/monitorCustodialWalletService";
+import { indexSUIEventService } from "./background/indexSUIEventService";
 
 // const server = app.listen(env.PORT, () => {
 //   const { NODE_ENV, HOST, PORT } = env;
@@ -36,8 +37,14 @@ mongoose
 monitorCustodialWalletService.onStartMonitor();
 
 // Start SUI event listener
-// subscribeSuiEventService.onSubscribeEvent();
+try {
+  // subscribeSuiEventService.onSubscribeEvent();
+  indexSUIEventService.setupListeners();
+} catch (error) {
+  logger.error(error);
+}
 
+/*
 // Get IDs
 const getAdminCap = async () => {
   const suiClient = new SuiClient({
@@ -45,23 +52,21 @@ const getAdminCap = async () => {
   });
   const adminCap = await suiClient
     .getOwnedObjects({
-      owner:
-        "0xf297beb5b35cc39932217e5b4384708fa20b42313bf80488b0c531963702c1b1",
+      owner: process.env.ADMIN_ADDRESS!,
       filter: {
-        StructType:
-          "0xc20fe1425c98c7bc69cc64df534685d91795ea013ad88f2d680b91442aed25a7::campaign::AdminCap", //`${process.env.PACKAGE_ADDRESS}::campaign::AdminCap`,
+        StructType: `${process.env.PACKAGE_ADDRESS}::campaign::AdminCap`,
       },
     })
     .then(async (resp) => {
-      console.log(resp.data);
+      // console.log(resp.data);
       return resp.data.length === 0;
     });
-  console.log(adminCap);
+
+  console.log({ adminCap });
 };
 
 getAdminCap();
-
-//////////////////////
+*/
 
 const onCloseSignal = async () => {
   logger.info("Sigint received, shutting down.");
