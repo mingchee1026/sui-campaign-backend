@@ -17,14 +17,13 @@ class SubscribeSuiEventService {
   constructor(repository: UserRepository = new UserRepository()) {
     this.userRepository = repository;
     this.suiClient = new SuiClient({
-      // url: getFullnodeUrl("mainnet"),
-      transport: new SuiHTTPTransport({
-        url: "https://fullnode.testnet.sui.io:443",
-        websocket: {
-          reconnectTimeout: 1000,
-          url: "wss://fullnode.testnet.sui.io:443",
-        },
-      }),
+      url: getFullnodeUrl("mainnet"),
+      // transport: new SuiHTTPTransport({
+      //   url: getFullnodeUrl("mainnet"),
+      //   websocket: {
+      //     reconnectTimeout: 1000,
+      //     url: "wss://rpc.mainnet.sui.io:443",
+      //   },
       // }),
       // transport: new SuiHTTPTransport({
       //   url: getFullnodeUrl("mainnet"),
@@ -47,13 +46,17 @@ class SubscribeSuiEventService {
     );
 
     try {
-      this.unsubscribe = await this.suiClient.subscribeEvent({
+      this.unsubscribe = await this.suiClient.subscribeTransaction({
+        // .subscribeEvent({
         filter: {
+          FromAddress: packageId,
+          // All: [],
           // Package: packageId,
-          MoveEventModule: {
-            module: `${packageId}::campaign`,
-            package: packageId,
-          },
+          // MoveEventType: `${packageId}::campaign::LoginEvent`,
+          // MoveEventModule: {
+          //   module: `${packageId}::campaign`,
+          //   package: packageId,
+          // },
         },
         onMessage: (event) => {
           console.log("subscribeEvent", JSON.stringify(event, null, 2));
