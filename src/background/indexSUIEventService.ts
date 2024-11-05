@@ -25,12 +25,17 @@ type EventTracker = {
 
 const EVENTS_TO_TRACK: EventTracker[] = [
   {
-    type: `${process.env.PACKAGE_ADDRESS}::${process.env.CAMPAIGN_OBJECT_ADDRESS}::campaign`,
+    // type: `${process.env.PACKAGE_ADDRESS}::${process.env.CAMPAIGN_OBJECT_ADDRESS}::campaign`,
+    type: `${process.env.PACKAGE_ADDRESS}::campaign`,
     filter: {
       MoveEventModule: {
         module: "campaign",
         package: process.env.PACKAGE_ADDRESS!,
       },
+      // MoveModule: {
+      //   module: "campaign",
+      //   package: process.env.PACKAGE_ADDRESS!,
+      // },
     },
     callback: handleEventObjects,
   },
@@ -43,6 +48,7 @@ class IndexSUIEventService {
   constructor(repository: EventRepository = new EventRepository()) {
     this.suiClient = new SuiClient({
       url: getFullnodeUrl("mainnet"),
+      // url: getFullnodeUrl("testnet"),
     });
 
     this.repository = repository;
@@ -69,17 +75,19 @@ class IndexSUIEventService {
       // get the events from the chain.
       // For this implementation, we are going from start to finish.
       // This will also allow filling in a database from scratch!
-      logger.info("1111111111111111111111", cursor);
       const { data, hasNextPage, nextCursor } = await client.queryEvents({
         query: tracker.filter,
-        // cursor,
-        order: "descending",
+        cursor,
+        order: "ascending",
       });
 
-      logger.info(data);
+      logger.info(data.length);
+      logger.info(hasNextPage);
+      logger.info(nextCursor);
+      logger.info("-----------------------------------------------");
 
       // handle the data transformations defined for each event
-      await tracker.callback(data, tracker.type);
+      // await tracker.callback(data, tracker.type);
 
       // We only update the cursor if we fetched extra data (which means there was a change).
       if (nextCursor && data.length > 0) {
