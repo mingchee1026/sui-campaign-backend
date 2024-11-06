@@ -44,7 +44,6 @@ try {
   logger.error(error);
 }
 
-/*
 // Get IDs
 const getAdminCap = async () => {
   const suiClient = new SuiClient({
@@ -66,7 +65,6 @@ const getAdminCap = async () => {
 };
 
 getAdminCap();
-*/
 
 const onCloseSignal = async () => {
   logger.info("Sigint received, shutting down.");
