@@ -18,10 +18,8 @@ class WebAuthnController {
     const body = await _req.body;
     try {
       const { username, name } = body;
-
       if (username && name) {
         logger.info(`Received request for user ${username}`);
-        database["username"] = "";
         if (database[username] && database[username].registered) {
           const serviceResponse = ServiceResponse.failure(
             `Username ${username} already exists.`,
