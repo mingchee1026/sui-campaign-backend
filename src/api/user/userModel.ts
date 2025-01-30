@@ -50,6 +50,19 @@ const UserSchema = new mongoose.Schema({
   jwt: {
     type: {},
   },
+  publicKey: {
+    type: String,
+    require: true,
+    index: true,
+  },
+  signature: {
+    type: String,
+    require: true,
+    index: true,
+  },
+  context: {
+    type: {},
+  },
   createdAt: {
     type: Date,
     default: Date.now,
