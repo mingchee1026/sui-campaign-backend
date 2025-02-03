@@ -22,6 +22,7 @@
     "@asteasolutions/zod-to-openapi": "^7.0.0",
     "@mysten/enoki": "^0.4.4",
     "@mysten/sui": "^1.9.0",
+    "@simplewebauthn/server": "^13.1.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "cron": "^3.1.7",
