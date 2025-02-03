@@ -10,6 +10,7 @@ export const healthCheckRegistry = new OpenAPIRegistry();
 export const healthCheckRouter: Router = express.Router();
 
 healthCheckRegistry.registerPath({
+  summary: "Check the server status",
   method: "get",
   path: "/api/health-check",
   tags: ["Health Check"],
