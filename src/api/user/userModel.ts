@@ -55,14 +55,9 @@ const UserSchema = new mongoose.Schema({
     require: true,
     index: true,
   },
-  signature: {
-    type: String,
-    require: true,
-    index: true,
-  },
-  context: {
-    type: {},
-  },
+  // credential: {
+  //   type: {},
+  // },
   createdAt: {
     type: Date,
     default: Date.now,
