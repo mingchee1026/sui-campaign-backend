@@ -42,6 +42,7 @@ const UserResponseSchema = z.object({
 // userRegistry.register("User", UserSchema);
 
 userRegistry.registerPath({
+  summary: "Register a new user with zkLogin",
   method: "post",
   path: "/api/users/register",
   tags: ["Users"],
@@ -62,6 +63,165 @@ userRegistry.registerPath({
 });
 
 userRegistry.registerPath({
+  summary: "Register a new user with WebAuthn signature",
+  method: "post",
+  path: "/api/users/webauthn/register",
+  tags: ["Users"],
+  request: {
+    // headers: z.object({
+    //   Authorization: z.string().default("Bearer {jwtData}"), //`Bearer ${jwtData()}`,: z.string()
+    // }),
+    // params: z.object({
+    //   publicKey: z.string(),
+    //   challenge: z.string(),
+    //   signature: z.string(),
+    //   context: z.object({
+    //     rpId: z.string(),
+    //     rpOrigin: z.string(),
+    //     domain: z.string(),
+    //   }),
+    // }),
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            publicKey: z.string(),
+            challenge: z.string(),
+            signature: z.string(),
+            context: z.object({
+              rpId: z.string(),
+              rpOrigin: z.string(),
+              domain: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+  },
+  responses: createApiResponse(
+    z.array(
+      z.object({
+        userId: z.string(),
+        walletAddress: z.string(),
+        token: z.string(),
+        expiresAt: z.string(),
+      })
+    ),
+    "Success"
+  ),
+});
+
+// userRegistry.registerPath({
+//   method: "post",
+//   path: "/api/users/webauthn/check",
+//   tags: ["Users"],
+//   request: {
+//     // headers: z.object({
+//     //   Authorization: z.string().default("Bearer {jwtData}"), //`Bearer ${jwtData()}`,: z.string()
+//     // }),
+//     params: z.object({
+//       publicKey: z.string(),
+//       context: z.object({
+//         rpId: z.string(),
+//         rpOrigin: z.string(),
+//         domain: z.string(),
+//       }),
+//     }),
+//   },
+//   responses: createApiResponse(
+//     z.array(z.object({ exists: z.boolean(), walletAddress: z.string() })),
+//     "Success"
+//   ),
+// });
+
+userRegistry.registerPath({
+  summary: "Login a user to a custodial wallet using a webauthn signature.",
+  method: "post",
+  path: "/api/users/webauthn/login",
+  tags: ["Users"],
+  request: {
+    // headers: z.object({
+    //   Authorization: z.string().default("Bearer {jwtData}"), //`Bearer ${jwtData()}`,: z.string()
+    // }),
+    // params: z.object({
+    //   publicKey: z.string(),
+    //   challenge: z.string(),
+    //   signature: z.string(),
+    //   context: z.object({
+    //     rpId: z.string(),
+    //     rpOrigin: z.string(),
+    //     domain: z.string(),
+    //   }),
+    // }),
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            publicKey: z.string(),
+            challenge: z.string(),
+            signature: z.string(),
+            context: z.object({
+              rpId: z.string(),
+              rpOrigin: z.string(),
+              domain: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+  },
+  responses: createApiResponse(
+    z.array(
+      z.object({
+        exists: z.boolean(),
+        walletAddress: z.string(),
+        token: z.string(),
+        expiresAt: z.string(),
+      })
+    ),
+    "Success"
+  ),
+});
+
+userRegistry.registerPath({
+  summary: "Record a user interaction.",
+  method: "post",
+  path: "/api/users/webauthn/interactions",
+  tags: ["Users"],
+  request: {
+    headers: z.object({
+      Authorization: z.string().default("Bearer {jwtData}"), //`Bearer ${jwtData()}`,: z.string()
+    }),
+    // params: z.object({
+    //   type: z.enum(["login", "referral"]),
+    //   referrerPublicKey: z.string(),
+    //   context: z.object({
+    //     rpId: z.string(),
+    //     rpOrigin: z.string(),
+    //     domain: z.string(),
+    //   }),
+    // }),
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            type: z.enum(["login", "referral"]),
+            referrerPublicKey: z.string(),
+            context: z.object({
+              rpId: z.string(),
+              rpOrigin: z.string(),
+              domain: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+  },
+  responses: createApiResponse(z.array(z.object({})), "Success"),
+});
+
+userRegistry.registerPath({
+  summary: "For testing",
   method: "get",
   path: "/api/users/profile/{campaign_id}/{subject}",
   tags: ["Users"],
@@ -73,6 +233,7 @@ userRegistry.registerPath({
 });
 
 userRegistry.registerPath({
+  summary: "For testing",
   method: "get",
   path: "/api/users/referred/{attribution_code}",
   tags: ["Users"],
@@ -85,6 +246,11 @@ userRegistry.registerPath({
 userRouter.get("/profile/:campaign_id/:subject", userController.getUser);
 userRouter.get("/referred/:attribution_code", userController.getReferrals);
 userRouter.post("/register", userController.register);
+
+userRouter.post("/webauthn/register", userController.registerWebauthn);
+// userRouter.post("/webauthn/check", userController.checkWebauthn);
+userRouter.post("/webauthn/login", userController.getWebauthnSession);
+userRouter.post("/webauthn/interactions", userController.interactionsWebauthn);
 
 userRouter.get("/sponsors", userController.getSponsors);
 userRouter.get("/initialize", userController.removeAllUsers);
