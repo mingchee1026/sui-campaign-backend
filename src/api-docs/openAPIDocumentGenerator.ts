@@ -1,4 +1,7 @@
-import { OpenAPIRegistry, OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
+import {
+  OpenAPIRegistry,
+  OpenApiGeneratorV3,
+} from "@asteasolutions/zod-to-openapi";
 
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
 import { userRegistry } from "@/api/user/userRouter";
@@ -11,10 +14,11 @@ export function generateOpenAPIDocument() {
     openapi: "3.0.0",
     info: {
       version: "1.0.0",
-      title: "Swagger API",
+      title: "Frak x 6degrees Integration API",
     },
     externalDocs: {
-      description: "View the raw OpenAPI Specification in JSON format",
+      description:
+        "API specification for Frak WebAuthn stuff with 6degrees wallet services",
       url: "/swagger.json",
     },
   });
