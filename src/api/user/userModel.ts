@@ -55,6 +55,14 @@ const UserSchema = new mongoose.Schema({
     require: true,
     index: true,
   },
+  callCount: {
+    type: Number,
+    require: true,
+  },
+  lastReset: {
+    type: Number,
+    require: true,
+  },
   // credential: {
   //   type: {},
   // },
