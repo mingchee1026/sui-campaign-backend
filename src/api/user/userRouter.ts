@@ -246,6 +246,7 @@ userRegistry.registerPath({
 userRouter.get("/profile/:campaign_id/:subject", userController.getUser);
 userRouter.get("/referred/:attribution_code", userController.getReferrals);
 userRouter.post("/register", userController.register);
+// userRouter.post("/register", userController.registerTest);
 
 userRouter.post("/webauthn/register", userController.registerWebauthn);
 // userRouter.post("/webauthn/check", userController.checkWebauthn);
