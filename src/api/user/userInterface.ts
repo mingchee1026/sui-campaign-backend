@@ -25,6 +25,9 @@ export interface IUser {
   referred_by: string;
   user_name: string;
   avatar: string;
+  publicKey: string;
+  callCount: number;
+  lastReset: number;
 }
 
 export interface UserRegisterRequest {
@@ -36,4 +39,15 @@ export interface UserRegisterRequest {
 export interface UserRegisterResponse {
   user: IUser;
   digest: string | null;
+}
+export interface WebautnContext {
+  rpId: string;
+  rpOrigin: string;
+  domain: string;
+}
+
+export interface WebautnUserRequest {
+  publicKey: string;
+  signature: string;
+  context: WebautnContext;
 }
