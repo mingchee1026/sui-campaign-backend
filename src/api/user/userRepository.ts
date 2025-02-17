@@ -7,7 +7,7 @@ export class UserRepository {
     return user;
   }
 
-  async update(
+  async updateCustodialAddress(
     campaign_id: string,
     subject: string,
     custodial_address: string
@@ -16,6 +16,51 @@ export class UserRepository {
     const user = await User.findOne({ campaign_id, subject });
     if (user) {
       user.custodial_address = custodial_address;
+
+      return await user.save();
+    }
+    return null;
+  }
+
+  async updateReferredBy(
+    campaign_id: string,
+    subject: string,
+    // custodial_address: string
+    referred_by: string
+  ) {
+    const user = await User.findOne({ campaign_id, subject });
+    if (user) {
+      user.referred_by = referred_by;
+
+      return await user.save();
+    }
+    return null;
+  }
+
+  async updateCallCount(
+    campaign_id: string,
+    subject: string,
+    callCount: number
+  ) {
+    const user = await User.findOne({ campaign_id, subject });
+    if (user) {
+      user.callCount = callCount;
+
+      return await user.save();
+    }
+    return null;
+  }
+
+  async updateCallLimit(
+    campaign_id: string,
+    subject: string,
+    callCount: number,
+    lastReset: number
+  ) {
+    const user = await User.findOne({ campaign_id, subject });
+    if (user) {
+      user.callCount = callCount;
+      user.lastReset = lastReset;
 
       return await user.save();
     }
@@ -39,6 +84,13 @@ export class UserRepository {
     subject: string
   ): Promise<IUser | null> {
     return await User.findOne({ campaign_id, subject });
+  }
+
+  async findByPublicKey(
+    campaign_id: string,
+    publicKey: string
+  ): Promise<IUser | null> {
+    return await User.findOne({ campaign_id, publicKey });
   }
 
   async findByAttributionCode(
