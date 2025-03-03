@@ -8,8 +8,8 @@ import mongoose from "mongoose";
 import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
 import { subscribeSuiEventService } from "@/background/subscribeSuiEventService";
-import { monitorCustodialWalletService } from "./background/monitorCustodialWalletService";
-import { indexSUIEventService } from "./background/indexSUIEventService";
+import { monitorCustodialWalletService } from "@/background/monitorCustodialWalletService";
+import { indexSUIEventService } from "@/background/indexSUIEventService";
 
 // const server = app.listen(env.PORT, () => {
 //   const { NODE_ENV, HOST, PORT } = env;
@@ -35,7 +35,7 @@ mongoose
 
 // Start custodial wallets monitoring
 monitorCustodialWalletService.onStartMonitor();
-
+/*
 // Start SUI event listener
 try {
   // subscribeSuiEventService.onSubscribeEvent();
@@ -65,6 +65,7 @@ const getAdminCap = async () => {
 };
 
 getAdminCap();
+*/
 
 const onCloseSignal = async () => {
   logger.info("Sigint received, shutting down.");
