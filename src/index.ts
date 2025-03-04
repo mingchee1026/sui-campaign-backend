@@ -35,7 +35,7 @@ mongoose
 
 // Start custodial wallets monitoring
 monitorCustodialWalletService.onStartMonitor();
-/*
+
 // Start SUI event listener
 try {
   // subscribeSuiEventService.onSubscribeEvent();
@@ -43,7 +43,7 @@ try {
 } catch (error) {
   logger.error(error);
 }
-
+/*
 // Get IDs
 const getAdminCap = async () => {
   const suiClient = new SuiClient({
