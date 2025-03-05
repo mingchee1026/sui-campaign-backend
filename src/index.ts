@@ -43,7 +43,7 @@ try {
 } catch (error) {
   logger.error(error);
 }
-/*
+
 // Get IDs
 const getAdminCap = async () => {
   const suiClient = new SuiClient({
@@ -63,7 +63,7 @@ const getAdminCap = async () => {
 
   console.log({ adminCap });
 };
-
+/*
 getAdminCap();
 */
 
