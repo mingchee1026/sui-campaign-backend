@@ -36,6 +36,7 @@ mongoose
 // Start custodial wallets monitoring
 monitorCustodialWalletService.onStartMonitor();
 
+/*
 // Start SUI event listener
 try {
   // subscribeSuiEventService.onSubscribeEvent();
@@ -63,7 +64,7 @@ const getAdminCap = async () => {
 
   console.log({ adminCap });
 };
-/*
+
 getAdminCap();
 */
 
@@ -84,3 +85,15 @@ const onCloseSignal = async () => {
 
 process.on("SIGINT", onCloseSignal);
 process.on("SIGTERM", onCloseSignal);
+
+//////////
+const calculatePNL = () => {
+  const purchasePrice = 0.0000054; // 0.0000135;
+  const finalPrice = 0.0000084; //0.0000239;
+
+  const pnlPercentage = ((finalPrice - purchasePrice) / purchasePrice) * 100;
+
+  console.log({ pnlPercentage });
+};
+
+calculatePNL();
