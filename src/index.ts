@@ -88,12 +88,12 @@ process.on("SIGTERM", onCloseSignal);
 
 //////////
 const calculatePNL = () => {
-  const purchasePrice = 0.0000054; // 0.0000135;
-  const finalPrice = 0.0000084; //0.0000239;
+  const purchasePrice = 0.000003195; // 0.0000135;
+  const finalPrice = 0.000013; //0.0000239;
 
   const pnlPercentage = ((finalPrice - purchasePrice) / purchasePrice) * 100;
 
-  console.log({ pnlPercentage });
+  console.error({ pnlPercentage });
 };
 
 calculatePNL();
