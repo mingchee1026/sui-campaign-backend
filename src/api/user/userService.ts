@@ -123,7 +123,7 @@ export class UserService {
 
       // console.log({ sponsorWallet });
 
-      // Check if the call limit has been reached
+      /* Check if the call limit has been reached
       const callable = await this.checkCallLimit(user);
       if (!callable) {
         return ServiceResponse.failure(
@@ -131,7 +131,7 @@ export class UserService {
           null,
           StatusCodes.TOO_MANY_REQUESTS
         );
-      }
+      }*/
 
       return ServiceResponse.success<any>("Contract call.", null);
     } catch (ex) {
@@ -151,7 +151,7 @@ export class UserService {
   // Register zkLogin user to the database
   async register(requestObj: UserRegisterRequest, jwt: Jwt): Promise<any> {
     try {
-      console.log({ requestObj });
+      logger.info({ requestObj });
 
       const { campaign_id, wallet_address, referred_by } = requestObj;
       const subject = jwt.sub;
@@ -225,7 +225,7 @@ export class UserService {
 
       // console.log({ sponsorWallet });
 
-      // Check if the call limit has been reached
+      /* Check if the call limit has been reached
       const callable = await this.checkCallLimit(user);
       if (!callable) {
         return ServiceResponse.failure(
@@ -233,9 +233,10 @@ export class UserService {
           null,
           StatusCodes.TOO_MANY_REQUESTS
         );
-      }
+      } */
 
       subscribeCLIEventService.getEventEmitter().emit("executeActivityTx", {
+        type: "zkLogin",
         custodialAddress: custodialWallet?.address!,
         custodialSecretKey: custodialWallet?.secretKey!,
         isNewUser,
@@ -272,7 +273,7 @@ export class UserService {
     context: WebautnContext
   ): Promise<any> {
     try {
-      console.log({ publicKey, challenge, signature, context });
+      // logger.info(`Webauthn register: publicKey=${publicKey}`);
 
       if (!publicKey || !challenge || !signature || !context) {
         return ServiceResponse.failure(
@@ -339,6 +340,7 @@ export class UserService {
         const isNewUser = true;
         const referrerAddress = "";
         subscribeCLIEventService.getEventEmitter().emit("executeActivityTx", {
+          type: "Webauthn register",
           custodialAddress: custodialWallet?.address!,
           custodialSecretKey: custodialWallet?.secretKey!,
           isNewUser,
@@ -436,7 +438,7 @@ export class UserService {
     context: WebautnContext
   ): Promise<any> {
     try {
-      console.log({ publicKey, challenge, signature, context });
+      // logger.info(`Webauthn check: publicKey=${publicKey}`);
 
       if (!publicKey || !challenge || !signature || !context) {
         return ServiceResponse.failure(
@@ -538,7 +540,7 @@ export class UserService {
     token: string | undefined
   ): Promise<any> {
     try {
-      console.log({ type, referrerPublicKey, context, token });
+      // logger.info(`Webauthn interaction: type=${type}`);
 
       if (!type || !context) {
         return ServiceResponse.failure(
@@ -584,7 +586,7 @@ export class UserService {
           subject
         );
 
-      // Check if the call limit has been reached
+      /* Check if the call limit has been reached
       const callable = await this.checkCallLimit(owner);
       if (!callable) {
         return ServiceResponse.failure(
@@ -592,10 +594,11 @@ export class UserService {
           null,
           StatusCodes.TOO_MANY_REQUESTS
         );
-      }
+      } */
 
       if (type === "login") {
         subscribeCLIEventService.getEventEmitter().emit("executeActivityTx", {
+          type: "Webauthn login",
           custodialAddress: custodialWallet?.address!,
           custodialSecretKey: custodialWallet?.secretKey!,
           isNewUser,
@@ -630,6 +633,7 @@ export class UserService {
         );
 
         subscribeCLIEventService.getEventEmitter().emit("executeActivityTx", {
+          type: "Webauthn refer",
           custodialAddress: custodialWallet?.address!,
           custodialSecretKey: custodialWallet?.secretKey!,
           isNewUser,
