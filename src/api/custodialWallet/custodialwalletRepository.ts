@@ -1,6 +1,7 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { CustodialWallet } from "./custodialwalletModel";
-import type { IcustodialWallet } from "./custodialwalletInterface";
+import { WhiteList } from "./whitelistModel";
+import type { IcustodialWallet, IWhiteList } from "./custodialwalletInterface";
 
 export class CustodialwalletRepository {
   async create(newWallet: IcustodialWallet): Promise<IcustodialWallet | null> {
@@ -71,5 +72,16 @@ export class CustodialwalletRepository {
       subject: "",
     });
     return ret;
+  }
+
+  async createWhitelist(whitelist: IWhiteList): Promise<IWhiteList | null> {
+    const whiteList = new WhiteList(whitelist);
+    const result = await whiteList.save();
+    return result;
+  }
+
+  async findWhiteListByAddress(address: string): Promise<IWhiteList | null> {
+    const whiteList = await WhiteList.findOne({ address });
+    return whiteList;
   }
 }
