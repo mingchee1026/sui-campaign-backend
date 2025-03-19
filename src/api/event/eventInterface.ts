@@ -1,14 +1,14 @@
-export type CampaignEvent = ReferralCreated | ActivityCreated;
+export type CampaignEvent = CreateReferralEvent | CreateActivityEvent;
 
-export type ReferralCreated = {
+export type CreateReferralEvent = {
   referrer: string;
   referee: string;
   created_at: string;
 };
 
-export type ActivityCreated = {
+export type CreateActivityEvent = {
   user: string;
-  loggedin_at: string;
+  created_at: string;
 };
 
 export interface IEventCursor {
