@@ -243,7 +243,7 @@ userRegistry.registerPath({
   responses: createApiResponse(z.array(z.array(UserResponseSchema)), "Success"),
 });
 
-userRouter.get("/profile/:campaign_id/:subject", userController.getUser);
+userRouter.get("/profile/:address", userController.getUser);
 userRouter.get("/referred/:attribution_code", userController.getReferrals);
 userRouter.post("/register", userController.register);
 // userRouter.post("/register", userController.registerTest);
@@ -255,3 +255,4 @@ userRouter.post("/webauthn/interactions", userController.interactionsWebauthn);
 
 userRouter.get("/sponsors", userController.getSponsors);
 userRouter.get("/initialize", userController.removeAllUsers);
+userRouter.get("/updateCampId/:campaign_id", userController.updateCampId);
