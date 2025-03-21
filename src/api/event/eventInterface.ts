@@ -12,7 +12,7 @@ export type CreateActivityEvent = {
 };
 
 export interface IEventCursor {
-  event_id: string;
+  campaign_id: string;
   event_seq: string;
   tx_digest: string;
 }
