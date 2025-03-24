@@ -8,7 +8,6 @@ const EventCursorSchema = new mongoose.Schema({
   },
   event_id: {
     type: String,
-    require: true,
     index: true,
   },
   event_seq: {
@@ -18,6 +17,7 @@ const EventCursorSchema = new mongoose.Schema({
   },
   tx_digest: {
     type: String,
+    require: true,
   },
 });
 
