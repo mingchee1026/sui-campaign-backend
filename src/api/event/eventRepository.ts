@@ -1,47 +1,52 @@
+import { EventId } from "@mysten/sui/client";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { ReferralEvent } from "./referralEventModel";
 import { ActivityEvent } from "./activityEventModel";
 import { EventCursor } from "./eventCursorModel";
 import {
-  CampaignEvent,
-  ReferralCreated,
-  ActivityCreated,
+  CreateReferralEvent,
+  CreateActivityEvent,
   IEventCursor,
 } from "@/api/event/eventInterface";
 
 export class EventRepository {
-  async createReferralEvent(referralEvent: CampaignEvent) {
-    const event = new ReferralEvent(referralEvent);
-    const result = await event.save();
-    return result;
+  async addReferralEvents(referralEvents: CreateReferralEvent[]) {
+    const event = new ReferralEvent(referralEvents);
+    await ReferralEvent.insertMany(referralEvents);
   }
 
-  async createActivityEvent(activityEvent: CampaignEvent) {
-    const event = new ActivityEvent(activityEvent);
-    const result = await event.save();
-    return result;
+  async addActivityEvents(activityEvents: CreateActivityEvent[]) {
+    const event = new ActivityEvent(activityEvents);
+    await ActivityEvent.insertMany(activityEvents);
   }
 
-  async findReferralEventById(id: string): Promise<CampaignEvent | null> {
-    const event = (await ReferralEvent.findOne({ id })) as CampaignEvent;
+  async findReferralEventById(id: string): Promise<CreateReferralEvent | null> {
+    const event = (await ReferralEvent.findOne({ id })) as CreateReferralEvent;
     return event;
   }
 
-  async findActivityEventById(id: string): Promise<CampaignEvent | null> {
-    const event = (await ActivityEvent.findOne({ id })) as CampaignEvent;
+  async findActivityEventById(id: string): Promise<CreateActivityEvent | null> {
+    const event = (await ActivityEvent.findOne({ id })) as CreateActivityEvent;
     return event;
   }
 
-  async createEventCursor(cursor: IEventCursor) {
+  async saveEventCursor(campaignId: string, cursor: EventId) {
     return await EventCursor.findOneAndUpdate(
-      { event_id: cursor.event_id }, // Search for cusor by event_id
-      { event_seq: cursor.event_seq, tx_digest: cursor.tx_digest }, // Update seq and digest
+      { campaign_id: campaignId }, // Search for cusor by event_id
+      { event_seq: cursor.eventSeq, tx_digest: cursor.txDigest }, // Update seq and digest
       { new: true, upsert: true } // Create if not found
     );
   }
 
-  async findCusorByType(event_id: string) {
-    const cursor = await EventCursor.findOne({ event_id });
-    return cursor;
+  async findCusorByCampaignId(campaignId: string) {
+    const cursor = await EventCursor.findOne({ campaign_id: campaignId });
+    if (cursor) {
+      return {
+        txDigest: cursor.tx_digest!,
+        eventSeq: cursor.event_seq!,
+      };
+    }
+
+    return null;
   }
 }
