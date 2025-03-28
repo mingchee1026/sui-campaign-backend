@@ -80,8 +80,11 @@ export class CustodialwalletRepository {
     return result;
   }
 
-  async findWhiteListByAddress(address: string): Promise<IWhiteList | null> {
-    const whiteList = await WhiteList.findOne({ address });
+  async findWhiteListByAddress(
+    campaign_id: string,
+    address: string
+  ): Promise<IWhiteList | null> {
+    const whiteList = await WhiteList.findOne({ campaign_id, address });
     return whiteList;
   }
 }
