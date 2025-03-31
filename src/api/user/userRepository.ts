@@ -1,5 +1,6 @@
 import { User } from "@/api/user/userModel";
 import type { IUser } from "./userInterface";
+import { WhiteList } from "../custodialWallet/whitelistModel";
 export class UserRepository {
   async create(newUser: IUser) {
     const user = new User(newUser);
@@ -67,6 +68,10 @@ export class UserRepository {
     return null;
   }
 
+  async updateCampId(campaign_id: string) {
+    await User.updateMany({}, { campaign_id });
+  }
+
   async findAll(): Promise<IUser[]> {
     return User.find();
   }
@@ -84,6 +89,12 @@ export class UserRepository {
     subject: string
   ): Promise<IUser | null> {
     return await User.findOne({ campaign_id, subject });
+  }
+
+  async findByCustodialAddress(
+    custodial_address: string
+  ): Promise<IUser | null> {
+    return await User.findOne({ custodial_address });
   }
 
   async findByPublicKey(
