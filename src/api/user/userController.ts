@@ -41,12 +41,8 @@ class UserController {
   };
 
   public getUser: RequestHandler = async (req: Request, res: Response) => {
-    const campaign_id = req.params.campaign_id as string;
-    const subject = req.params.subject as string;
-    const serviceResponse = await userService.findBySubject(
-      campaign_id,
-      subject
-    );
+    const address = req.params.address as string;
+    const serviceResponse = await userService.findByCustodialAddress(address);
 
     return handleServiceResponse(serviceResponse, res);
   };
@@ -139,10 +135,16 @@ class UserController {
   };
 
   public removeAllUsers: RequestHandler = async (
-    _req: Request,
+    req: Request,
     res: Response
   ) => {
     const serviceResponse = await userService.removeAll();
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public updateCampId: RequestHandler = async (req: Request, res: Response) => {
+    const campaign_id = req.params.campaign_id as string;
+    const serviceResponse = await userService.updateCampId(campaign_id);
     return handleServiceResponse(serviceResponse, res);
   };
 
