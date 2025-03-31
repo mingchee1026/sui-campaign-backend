@@ -543,6 +543,7 @@ export class UserService {
       // logger.info(`Webauthn interaction: type=${type}`);
 
       if (!type || !context) {
+        logger.error("Webauthn Interaction: Invalid request or signature.");
         return ServiceResponse.failure(
           "Invalid request or signature.",
           null,
@@ -551,6 +552,7 @@ export class UserService {
       }
 
       if (!token) {
+        logger.error("Webauthn Interaction: Invalid or expired session token.");
         return ServiceResponse.failure(
           "Invalid or expired session token.",
           null,
@@ -573,6 +575,7 @@ export class UserService {
       );
 
       if (!owner || owner.subject !== subject) {
+        logger.error("Webauthn Interaction: Invalid interaction data.");
         return ServiceResponse.failure(
           "Invalid interaction data.",
           null,
@@ -793,6 +796,35 @@ export class UserService {
     }
   }
 
+  async findByCustodialAddress(
+    custodial_address: string
+  ): Promise<ServiceResponse<IUser | null>> {
+    try {
+      const user = await this.userRepository.findByCustodialAddress(
+        custodial_address
+      );
+
+      if (!user) {
+        return ServiceResponse.failure(
+          "User not found",
+          null,
+          StatusCodes.NOT_FOUND
+        );
+      }
+      return ServiceResponse.success<IUser>("User found", user);
+    } catch (ex) {
+      const errorMessage = `Error finding user with custodial address ${custodial_address}:, ${
+        (ex as Error).message
+      }`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while finding user.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   // Retrieves all user's referrals from the database
   async findAllReferrals(
     attribution_code: string
@@ -844,6 +876,24 @@ export class UserService {
     try {
       await this.userRepository.removeAll();
       return ServiceResponse.success<null>("Users found", null);
+    } catch (ex) {
+      const errorMessage = `Error removing all users: $${
+        (ex as Error).message
+      }`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while removing users.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  // Removes all users from the database
+  async updateCampId(campaign_id: string): Promise<ServiceResponse<null>> {
+    try {
+      await this.userRepository.updateCampId(campaign_id);
+      return ServiceResponse.success<null>("Updated all campaign ID", null);
     } catch (ex) {
       const errorMessage = `Error removing all users: $${
         (ex as Error).message
