@@ -131,13 +131,13 @@ class IndexSUIEventService {
    *  or from the running cursors.
    */
   private getLatestCursor = async (tracker: EventTracker) => {
-    const cursor = await this.repository.findCusorByType(tracker.type);
-    if (cursor) {
-      return {
-        eventSeq: cursor.event_seq,
-        txDigest: cursor.tx_digest,
-      } as EventId;
-    }
+    // const cursor = await this.repository.findCusorByType(tracker.type);
+    // if (cursor) {
+    //   return {
+    //     eventSeq: cursor.event_seq,
+    //     txDigest: cursor.tx_digest,
+    //   } as EventId;
+    // }
 
     return undefined;
   };
@@ -153,7 +153,7 @@ class IndexSUIEventService {
       tx_digest: cursor.txDigest,
     };
 
-    return this.repository.createEventCursor(data);
+    // return this.repository.createEventCursor(data);
   };
 }
 
