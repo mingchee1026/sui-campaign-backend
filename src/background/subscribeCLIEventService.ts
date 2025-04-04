@@ -3,6 +3,7 @@ import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { sponsorAndSignTransaction } from "@/common/utils/transactions/sponsorAndSignTransaction";
 import { logger } from "@/server";
+import { CustodialwalletRepository } from "@/api/custodialWallet/custodialwalletRepository";
 import { SuiClient } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
 import { StatusCodes } from "http-status-codes";
@@ -11,14 +12,23 @@ import {
   RegistrationConfirmEmailTemplate,
   ReferralConfirmEmailTemplate,
 } from "@/common/utils/constant";
+import { Mutex } from "async-mutex";
+
+// const sponserTxMutex = new Mutex();
 
 class SubscribeCLIEventService {
   private eventEmitter: EventEmitter;
   private resend: Resend;
+  private sponserTxMutex: Mutex;
+  private repository: CustodialwalletRepository;
 
-  constructor() {
+  constructor(
+    repository: CustodialwalletRepository = new CustodialwalletRepository()
+  ) {
     this.eventEmitter = new EventEmitter();
     this.resend = new Resend(process.env.RESEND_API_KEY);
+    this.sponserTxMutex = new Mutex();
+    this.repository = repository;
 
     this.initialize();
   }
@@ -45,7 +55,9 @@ class SubscribeCLIEventService {
   }
 
   async sendRegisteredEmail(data: { email: string }) {
+    logger.info("----------------------------------------------------------");
     logger.info("Event fired : sendRegisteredEmail");
+
     const { email } = data;
 
     await this.sendRegistrationConfirmation(email);
@@ -54,7 +66,9 @@ class SubscribeCLIEventService {
   }
 
   async sendReferredEmail(data: { email: string; count: number }) {
+    logger.info("----------------------------------------------------------");
     logger.info("Event fired : sendReferredEmail");
+
     const { email, count } = data;
 
     await this.sendReferralConfirmation(email, count);
@@ -63,25 +77,82 @@ class SubscribeCLIEventService {
   }
 
   async executeActivityTx(data: {
+    type: string;
     custodialAddress: string;
     custodialSecretKey: string;
     isNewUser: boolean;
     referrerAddress: string;
   }) {
-    logger.info("Event fired : executeActivityTx");
-    const { custodialAddress, custodialSecretKey, isNewUser, referrerAddress } =
-      data;
+    // const release = await sponserTxMutex.acquire();
 
-    if (isNewUser) {
-      await this.executeAddWhitelistTransaction(
-        process.env.ADMIN_SECRET_KEY!,
-        custodialAddress
+    // try {
+
+    const {
+      type,
+      custodialAddress,
+      custodialSecretKey,
+      isNewUser,
+      referrerAddress,
+    } = data;
+
+    await this.sponserTxMutex.runExclusive(async () => {
+      const startTime = performance.now();
+      logger.info("----------------------------------------------------------");
+      logger.info(`Event fired : ${type}`);
+
+      if (isNewUser) {
+        logger.info(`Resister address : ${custodialAddress}`);
+        await this.executeAddWhitelistTransaction(
+          process.env.ADMIN_SECRET_KEY!,
+          custodialAddress
+        );
+      } else {
+        logger.info(`Interaction address : ${custodialAddress}`);
+
+        const whiteList = await this.repository.findWhiteListByAddress(
+          process.env.CAMPAIGN_OBJECT_ADDRESS || "",
+          custodialAddress
+        );
+
+        if (!whiteList) {
+          logger.info(`Resister address : ${custodialAddress}`);
+          await this.executeAddWhitelistTransaction(
+            process.env.ADMIN_SECRET_KEY!,
+            custodialAddress
+          );
+        }
+
+        if (referrerAddress) {
+          const whiteList1 = await this.repository.findWhiteListByAddress(
+            process.env.CAMPAIGN_OBJECT_ADDRESS || "",
+            referrerAddress
+          );
+
+          if (!whiteList1) {
+            logger.info(`Resister address : ${referrerAddress}`);
+            await this.executeAddWhitelistTransaction(
+              process.env.ADMIN_SECRET_KEY!,
+              referrerAddress
+            );
+          }
+        }
+
+        await this.executeActivityTransaction(
+          custodialSecretKey,
+          referrerAddress
+        );
+      }
+
+      const endTime = performance.now();
+
+      logger.info(
+        `Event processed !!! Total: ${endTime - startTime} milliseconds`
       );
-    }
+    });
 
-    await this.executeActivityTransaction(custodialSecretKey, referrerAddress);
-
-    logger.info("Event processed!!!");
+    // } finally {
+    //   release();
+    // }
   }
 
   sendRegistrationConfirmation = async (recipient: string) => {
@@ -125,25 +196,27 @@ class SubscribeCLIEventService {
       url: process.env.SUI_NETWORK || "http://localhost",
     });
 
-    logger.info(`chain: ${process.env.SUI_NETWORK}`);
+    // logger.info(`chain: ${process.env.SUI_NETWORK}`);
 
     const tx = new Transaction();
 
     tx.moveCall({
       target: `${process.env.PACKAGE_ADDRESS}::campaign::log_user_activity`,
       arguments: [
-        tx.object(`${process.env.CAMPAIGN_SECURITY_ADDRESS}`), // campaign security object address
+        // tx.object(`${process.env.CAMPAIGN_SECURITY_ADDRESS}`), // campaign security object address
         tx.object(`${process.env.CAMPAIGN_OBJECT_ADDRESS}`), // campaign object address
         tx.object("0x6"), // Clock object address
       ],
     });
 
     if (referrerAddress) {
+      logger.info(`Referrer address : ${referrerAddress}`);
+
       try {
         tx.moveCall({
           target: `${process.env.PACKAGE_ADDRESS}::campaign::create_referral`,
           arguments: [
-            tx.object(`${process.env.CAMPAIGN_SECURITY_ADDRESS}`), // campaign security object address
+            // tx.object(`${process.env.CAMPAIGN_SECURITY_ADDRESS}`), // campaign security object address
             tx.object(`${process.env.CAMPAIGN_OBJECT_ADDRESS}`), // campaign object address
             tx.pure.address(referrerAddress), // referrer address
             tx.object("0x6"), // Clock object address
@@ -154,11 +227,21 @@ class SubscribeCLIEventService {
       }
     }
 
-    const { digest } = await sponsorAndSignTransaction({
-      tx,
-      suiClient,
-      senderSecretKey: custodialSecretKey,
-    });
+    let digest = null;
+    // const release = await sponserTxMutex.acquire();
+
+    try {
+      const results = await sponsorAndSignTransaction({
+        tx,
+        suiClient,
+        senderSecretKey: custodialSecretKey,
+        isRegister: false,
+      });
+
+      digest = results.digest;
+    } finally {
+      // release();
+    }
 
     logger.info(`digest: ${digest}`);
   };
@@ -171,7 +254,7 @@ class SubscribeCLIEventService {
       url: process.env.SUI_NETWORK || "http://localhost",
     });
 
-    logger.info(`chain: ${process.env.SUI_NETWORK}`);
+    // logger.info(`chain: ${process.env.SUI_NETWORK}`);
 
     const tx = new Transaction();
 
@@ -185,11 +268,29 @@ class SubscribeCLIEventService {
       ],
     });
 
-    const { digest } = await sponsorAndSignTransaction({
-      tx,
-      suiClient,
-      senderSecretKey: adminSecretKey,
-    });
+    let digest = null;
+    // const release = await sponserTxMutex.acquire();
+
+    try {
+      const results = await sponsorAndSignTransaction({
+        tx,
+        suiClient,
+        senderSecretKey: adminSecretKey,
+        isRegister: true,
+      });
+
+      digest = results.digest;
+
+      if (digest) {
+        await this.repository.createWhitelist({
+          campaign_id: process.env.CAMPAIGN_OBJECT_ADDRESS || "",
+          address: allowedAddress,
+          permission: true,
+        });
+      }
+    } finally {
+      // release();
+    }
 
     logger.info(`digest: ${digest}`);
   };
