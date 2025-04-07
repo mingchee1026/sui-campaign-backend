@@ -16,13 +16,16 @@ interface SponsorAndSignTransactionProps {
   suiClient: SuiClient;
   tx: Transaction;
   senderSecretKey: string;
+  isRegister: boolean;
 }
 
 export const sponsorAndSignTransaction = async ({
   tx,
   suiClient,
   senderSecretKey,
+  isRegister,
 }: SponsorAndSignTransactionProps) => {
+  let testAdd = "";
   try {
     // logger.info(`custodialSecretKey: ${custodialSecretKey}`);
 
@@ -30,7 +33,10 @@ export const sponsorAndSignTransaction = async ({
     const senderKeypair = Ed25519Keypair.fromSecretKey(secretKey);
     const senderAddress = senderKeypair.getPublicKey().toSuiAddress();
 
-    logger.info(`senderAddress: ${senderAddress}`);
+    // for testing
+    testAdd = senderAddress;
+
+    // logger.info(`Sender Address: ${senderAddress}`);
 
     const txBytes = await tx.build({
       client: suiClient,
@@ -41,7 +47,9 @@ export const sponsorAndSignTransaction = async ({
 
     const network = process.env.ENOKI_CLIENT_NETWORK;
 
-    logger.info(`network: ${network}`);
+    // logger.info(`Network: ${network}`);
+
+    // const st1 = performance.now();
 
     const resp = await enokiClient.createSponsoredTransaction({
       network: network as EnokiNetwork,
@@ -59,20 +67,45 @@ export const sponsorAndSignTransaction = async ({
       fromB64(resp.bytes)
     );
 
+    // const et1 = performance.now();
+    // logger.info(`Tx creating time: ${et1 - st1} milliseconds`);
+
     // console.log({ signature });
 
-    const { digest } = await enokiClient.executeSponsoredTransaction({
-      digest: resp.digest,
-      signature,
-    });
+    // const st2 = performance.now();
+
+    if (isRegister) {
+      const { digest } = await enokiClient.executeSponsoredTransaction({
+        digest: resp.digest,
+        signature,
+      });
+
+      return { digest };
+    }
+
+    enokiClient
+      .executeSponsoredTransaction({
+        digest: resp.digest,
+        signature,
+      })
+      .then(async (res: any) => {
+        logger.info(`Results: -------------------- ${res.digest}`);
+      })
+      .catch((error: any) => {
+        logger.info(`Error: -------------------- ${error}`);
+      });
+
+    // const et2 = performance.now();
+    // logger.info(`Tx executing time: ${et2 - st2} milliseconds`);
 
     // logger.info(`digest: ${digest}`);
 
     return {
-      digest,
+      // digest,
+      digest: resp.digest,
     };
-  } catch (error) {
-    console.log(error);
+  } catch (error: any) {
+    logger.error(`Sender: ${testAdd}: ${error}`); //error(`Error: ${error.message || error}`);
     return {
       digest: null,
     };
@@ -122,7 +155,7 @@ export const sponsorAndSignTransactionRaw = async ({
     // you can now set the sponsored transaction data that is required
     sponsoredtx.setSender(sponserAddress);
     sponsoredtx.setGasOwner(sponserAddress);
-    sponsoredtx.setGasBudget(10000000);
+    sponsoredtx.setGasBudget(100000000);
     sponsoredtx.setGasPayment(sponsorCoins);
 
     const sponsoredTxnBuild = await sponsoredtx.build({ client: suiClient });
