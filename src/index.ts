@@ -1,15 +1,9 @@
-import {
-  SuiClient,
-  SuiHTTPTransport,
-  getFullnodeUrl,
-} from "@mysten/sui/client";
 import mongoose from "mongoose";
 
 import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
 import { subscribeSuiEventService } from "@/background/subscribeSuiEventService";
 import { monitorCustodialWalletService } from "@/background/monitorCustodialWalletService";
-import { indexSUIEventService } from "@/background/indexSUIEventService";
 
 // const server = app.listen(env.PORT, () => {
 //   const { NODE_ENV, HOST, PORT } = env;
@@ -36,15 +30,13 @@ mongoose
 // Start custodial wallets monitoring
 monitorCustodialWalletService.onStartMonitor();
 
-/*
 // Start SUI event listener
 try {
-  // subscribeSuiEventService.onSubscribeEvent();
-  indexSUIEventService.setupListeners();
+  subscribeSuiEventService.onSubscribeEvent();
 } catch (error) {
   logger.error(error);
 }
-
+/*
 // Get IDs
 const getAdminCap = async () => {
   const suiClient = new SuiClient({
@@ -86,10 +78,11 @@ const onCloseSignal = async () => {
 process.on("SIGINT", onCloseSignal);
 process.on("SIGTERM", onCloseSignal);
 
-//////////
+////////// 0.0₅44226/$0.0₅72101
+/*
 const calculatePNL = () => {
-  const purchasePrice = 0.00001; // 0.0000135;
-  const finalPrice = 0.000015; //0.0000239;
+  const purchasePrice = 0.00000624; // 0.0000183;
+  const finalPrice = 0.000034; //0.0000239;
 
   const pnlPercentage = ((finalPrice - purchasePrice) / purchasePrice) * 100;
 
@@ -97,3 +90,4 @@ const calculatePNL = () => {
 };
 
 calculatePNL();
+*/
