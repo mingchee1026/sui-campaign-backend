@@ -32,7 +32,7 @@ monitorCustodialWalletService.onStartMonitor();
 
 // Start SUI event listener
 try {
-  subscribeSuiEventService.onSubscribeEvent();
+  // subscribeSuiEventService.onSubscribeEvent();
 } catch (error) {
   logger.error(error);
 }
@@ -79,10 +79,10 @@ process.on("SIGINT", onCloseSignal);
 process.on("SIGTERM", onCloseSignal);
 
 ////////// 0.0₅44226/$0.0₅72101
-/*
+
 const calculatePNL = () => {
-  const purchasePrice = 0.00000624; // 0.0000183;
-  const finalPrice = 0.000034; //0.0000239;
+  const purchasePrice = 0.00019; // 0.0000183;
+  const finalPrice = 0.001; //0.0000239;
 
   const pnlPercentage = ((finalPrice - purchasePrice) / purchasePrice) * 100;
 
@@ -90,4 +90,3 @@ const calculatePNL = () => {
 };
 
 calculatePNL();
-*/

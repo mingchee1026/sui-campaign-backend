@@ -105,7 +105,8 @@ export const sponsorAndSignTransaction = async ({
       digest: resp.digest,
     };
   } catch (error: any) {
-    logger.error(`Sender: ${testAdd}: ${error}`); //error(`Error: ${error.message || error}`);
+    console.log(error);
+    // logger.error(`Sender: ${testAdd}: ${error}`);
     return {
       digest: null,
     };
