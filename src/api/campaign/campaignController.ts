@@ -64,7 +64,7 @@ class CampaignController {
     const tx = new Transaction();
 
     tx.moveCall({
-      target: `${process.env.PACKAGE_ADDRESS}::camapign::create_campaign`,
+      target: `${process.env.PACKAGE_ADDRESS}::campaign::create_campaign`,
       arguments: [
         tx.object(`${process.env.CAMPAIGN_ADMIN_CAP_ADDRESS}`), // campaign admincap object address
         tx.pure.string(title), // campaign title
