@@ -6,6 +6,14 @@ import { handleServiceResponse } from "@/common/utils/httpHandlers";
 
 import { ServiceResponse } from "@/common/models/serviceResponse";
 
+import { SuiClient } from "@mysten/sui/client";
+import { Transaction } from "@mysten/sui/transactions";
+import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
+import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
+
+import * as fs from "fs";
+import * as path from "path";
+
 class UserController {
   public registerTest: RequestHandler = async (req: Request, res: Response) => {
     const body = await req.body;
@@ -146,6 +154,211 @@ class UserController {
     const campaign_id = req.params.campaign_id as string;
     const serviceResponse = await userService.updateCampId(campaign_id);
     return handleServiceResponse(serviceResponse, res);
+  };
+
+  /////////////////////////
+
+  // Function to write the array to a file
+  public writeArrayToFile(filePath: string, array: string[]): void {
+    fs.writeFileSync(filePath, JSON.stringify(array), "utf8");
+    // console.log(`Array written to ${filePath}`);
+  }
+
+  // Function to read the array from a file
+  public readArrayFromFile(filePath: string): string[] {
+    const data = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(data);
+  }
+
+  public removeRef: RequestHandler = async (req: Request, res: Response) => {
+    const suiClient = new SuiClient({
+      url: process.env.SUI_NETWORK || "http://localhost",
+    });
+    // Define the file path
+    const filePath = path.join(__dirname, "ref.json");
+
+    let cursor: string | null = null;
+    let allFields: any[] = [];
+    do {
+      const ret = await suiClient.getDynamicFields({
+        parentId:
+          "0xcb78c5a75f1bc3553fcea082649b2094ba6c265857101c6b2c6e50c2833107ff",
+        cursor,
+      });
+      allFields.push(...ret.data);
+      cursor = ret.hasNextPage ? ret.nextCursor : null;
+    } while (cursor);
+
+    const keys = allFields.map((field) => field.name.value);
+    console.log(keys);
+
+    // Write the array to the file
+    this.writeArrayToFile(filePath, keys);
+
+    // Read the array from the file
+    const addresses = this.readArrayFromFile(filePath);
+
+    const { schema, secretKey } = decodeSuiPrivateKey(
+      process.env.ADMIN_SECRET_KEY!
+    );
+    const adminKeypair = Ed25519Keypair.fromSecretKey(secretKey);
+
+    for (const key of addresses) {
+      try {
+        const tx = new Transaction();
+        tx.moveCall({
+          target: `${process.env.PACKAGE_ADDRESS}::campaign::remove_referrals_update_last`,
+          arguments: [
+            // tx.object(`${process.env.CAMPAIGN_ADMIN_CAP_ADDRESS}`), // campaign admincap object address
+            tx.object(`${process.env.CAMPAIGN_OBJECT_ADDRESS}`), // campaign object address
+            tx.pure.address(key), // allowed address
+          ],
+        });
+
+        await suiClient.signAndExecuteTransaction({
+          signer: adminKeypair,
+          transaction: tx,
+        });
+
+        console.log(`Removed address: ${key} !!!`);
+      } catch (error) {
+        console.log(`Error: ${error} !!!`);
+      }
+    }
+
+    return res.status(200).send("OK");
+  };
+
+  public removeLog: RequestHandler = async (req: Request, res: Response) => {
+    // Define the file path
+    const keyPath = path.join(__dirname, "log.json");
+    const excludePath = path.join(__dirname, "exclude.json");
+
+    const suiClient = new SuiClient({
+      url: process.env.SUI_NETWORK || "http://localhost",
+    });
+
+    let cursor: string | null = null;
+    let allFields: any[] = [];
+    // do {
+    const ret = await suiClient.getDynamicFields({
+      parentId:
+        "0x063e7df715e9fd839ccae75b50aa3e897726149041848fa4b1493e92bc5cdf59",
+      cursor,
+    });
+    allFields.push(...ret.data);
+    cursor = ret.hasNextPage ? ret.nextCursor : null;
+    // } while (cursor);
+
+    const keys = allFields.map((field) => field.name.value);
+    console.log(keys);
+
+    // Write the array to the file
+    this.writeArrayToFile(keyPath, keys);
+
+    // Read the array from the file
+    const key_addresses = this.readArrayFromFile(keyPath);
+    const exclude_addresses = this.readArrayFromFile(excludePath);
+
+    const { schema, secretKey } = decodeSuiPrivateKey(
+      process.env.ADMIN_SECRET_KEY!
+    );
+    const adminKeypair = Ed25519Keypair.fromSecretKey(secretKey);
+
+    for (const key of key_addresses) {
+      if (exclude_addresses.includes(key)) {
+        continue;
+      }
+
+      console.log(`New Address: ${key}`);
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${process.env.PACKAGE_ADDRESS}::campaign::remove_activities_update_last`,
+        arguments: [
+          // tx.object(`${process.env.CAMPAIGN_ADMIN_CAP_ADDRESS}`), // campaign admincap object address
+          tx.object(`${process.env.CAMPAIGN_OBJECT_ADDRESS}`), // campaign object address
+          tx.pure.address(key), // allowed address
+        ],
+      });
+
+      await suiClient.signAndExecuteTransaction({
+        signer: adminKeypair,
+        transaction: tx,
+      });
+
+      console.log(`Removed address: ${key} !!!`);
+
+      exclude_addresses.push(key);
+
+      // Write the array to the exclude file
+      this.writeArrayToFile(excludePath, exclude_addresses);
+    }
+
+    return res.status(200).send("OK");
+  };
+
+  public removeWL: RequestHandler = async (req: Request, res: Response) => {
+    const suiClient = new SuiClient({
+      url: process.env.SUI_NETWORK || "http://localhost",
+    });
+    // Define the file path
+    const filePath = path.join(__dirname, "whitelist.json");
+
+    let cursor: string | null = null;
+    let allFields: any[] = [];
+    do {
+      const ret = await suiClient.getDynamicFields({
+        parentId:
+          "0x92ec4bfd04e549a8021ded25395272a9fce2cab1b9c5d8e74c221382a44d0298",
+        cursor,
+      });
+      allFields.push(...ret.data);
+      if (allFields.length >= 10000) {
+        break;
+      }
+      cursor = ret.hasNextPage ? ret.nextCursor : null;
+    } while (cursor);
+
+    const keys = allFields.map((field) => field.name.value);
+    console.log(`Total: ${keys.length}`);
+
+    // Write the array to the file
+    this.writeArrayToFile(filePath, keys);
+
+    // Read the array from the file
+    // const addresses = this.readArrayFromFile(filePath);
+
+    const { schema, secretKey } = decodeSuiPrivateKey(
+      process.env.ADMIN_SECRET_KEY!
+    );
+    const adminKeypair = Ed25519Keypair.fromSecretKey(secretKey);
+
+    let idx = 1;
+    for (const key of keys) {
+      try {
+        const tx = new Transaction();
+        tx.moveCall({
+          target: `${process.env.PACKAGE_ADDRESS}::campaign::remove_whitelist`,
+          arguments: [
+            // tx.object(`${process.env.CAMPAIGN_ADMIN_CAP_ADDRESS}`), // campaign admincap object address
+            tx.object(`${process.env.CAMPAIGN_OBJECT_ADDRESS}`), // campaign object address
+            tx.pure.address(key), // allowed address
+          ],
+        });
+
+        await suiClient.signAndExecuteTransaction({
+          signer: adminKeypair,
+          transaction: tx,
+        });
+
+        console.log(`Removed address: ${key} ${idx} !!!`);
+        idx++;
+      } catch (error) {
+        console.log(`Error: ${error} !!!`);
+      }
+    }
+
+    return res.status(200).send("OK");
   };
 
   private verifyWebAuthnSignature = async (
